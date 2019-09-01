@@ -40,4 +40,10 @@ Lastly, you can use the `--long-poll` option to keep waiting for new changes to 
 Hope you do some cool data analysis with this tool -ungato/vexcat
 
 # Compiling
-//TODO
+On Linux (Ubuntu 18.04), you'll need to first [get the latest CMake, the one in your distro's repo is probably too outdated](https://askubuntu.com/a/595441/), then do this in your shell:
+```
+sudo apt install build-essential libsqlite3-dev libcurlpp-dev libcurl4-openssl-dev
+cmake .
+make
+```
+You should now be able to execute `./ViaCLI`! Have fun with it.
