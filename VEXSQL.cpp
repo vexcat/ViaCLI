@@ -58,14 +58,14 @@ bool updateEventList(int timeout) {
     return db.applyEndpoint("events", timeout);
 }
 
-ScopedSQLite3& dbForEventList() {
+ScopedSQLite3& dbForEventList(bool update) {
     if(!eventListDB) {
         eventListDB = std::make_unique<ScopedSQLite3>("evt_list.db");
         eventListDB->exec("PRAGMA JOURNAL_MODE = OFF;");
         eventListDB->exec("PRAGMA SYNCHRONOUS = OFF;");
         eventListDB->exec("PRAGMA LOCKING_MODE = EXCLUSIVE;");
         eventListDB->seqTableName = "events_sequence";
-        updateEventList();
+        if(update) updateEventList();
     }
     return *eventListDB;
 }

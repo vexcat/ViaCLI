@@ -73,7 +73,7 @@ struct ScopedSQLite3 {
 };
 
 bool updateEventList(int timeout = 0);
-ScopedSQLite3& dbForEventList();
+ScopedSQLite3& dbForEventList(bool update = true);
 
 inline ScopedSQLite3 dbForEndpoint(const std::string& endpoint) {
     ScopedSQLite3 db(":memory:");

@@ -49,7 +49,7 @@ json dumpEntireDatabase(ScopedSQLite3& db) {
 //Too much of a thiccy
 void doCLI(int argc, char** argv) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <list-events | detail-event <SKU>> <dump | do <SQL>> [--long-poll]." << std::endl;
+        std::cout << "Usage: " << argv[0] << " <list-events | list-events-no-network | detail-event <SKU>> <dump | do <SQL>> [--long-poll]." << std::endl;
         std::cout << "list-events will give data on all events registered on VEX Via." << std::endl;
         std::cout << "detail-event-<SKU> will give data for particular event/SKU. (The end of a RobotEvents URL.)" << std::endl;
         std::cout << "Output is written to stdout in JSON." << std::endl;
@@ -66,6 +66,7 @@ void doCLI(int argc, char** argv) {
     }
     int reqStep = 0;
     bool longPolling = false;
+    bool network = true;
     std::string endpoint;
     bool dumpAll = false;
     std::string givenQuery;
@@ -94,6 +95,9 @@ void doCLI(int argc, char** argv) {
         if(reqStep == 0) {
             if(param == "list-events") {
                 endpoint = "events";
+            } else if(param == "list-events-no-network") {
+                endpoint = "events";
+                network = false;
             } else if(param == "detail-event") {
                 i++;
                 if(i == argc) throw std::runtime_error("Expected an SKU.\n");
@@ -115,7 +119,7 @@ void doCLI(int argc, char** argv) {
     ScopedSQLite3* dbPtr;
     if(endpoint == "events") {
         eventDestructor = nullptr;
-        dbPtr = &dbForEventList();
+        dbPtr = &dbForEventList(network);
     } else {
         eventDestructor = std::make_unique<ScopedSQLite3>(dbForEndpoint(endpoint));
         dbPtr = &(*eventDestructor);
