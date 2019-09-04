@@ -46,7 +46,6 @@ json dumpEntireDatabase(ScopedSQLite3& db) {
     return ret;
 }
 
-//Too much of a thiccy
 void doCLI(int argc, char** argv) {
     if (argc < 2) {
         std::cout << "Usage: " << argv[0] << " <list-events | list-events-no-network | detail-event <SKU>> <dump | do <SQL>> [--long-poll] [--timeout x]." << std::endl;
