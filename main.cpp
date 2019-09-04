@@ -49,7 +49,7 @@ json dumpEntireDatabase(ScopedSQLite3& db) {
 //Too much of a thiccy
 void doCLI(int argc, char** argv) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <list-events | list-events-no-network | detail-event <SKU>> <dump | do <SQL>> [--long-poll]." << std::endl;
+        std::cout << "Usage: " << argv[0] << " <list-events | list-events-no-network | detail-event <SKU>> <dump | do <SQL>> [--long-poll] [--timeout x]." << std::endl;
         std::cout << "list-events will give data on all events registered on VEX Via." << std::endl;
         std::cout << "detail-event-<SKU> will give data for particular event/SKU. (The end of a RobotEvents URL.)" << std::endl;
         std::cout << "Output is written to stdout in JSON." << std::endl;
@@ -70,14 +70,22 @@ void doCLI(int argc, char** argv) {
     std::string endpoint;
     bool dumpAll = false;
     std::string givenQuery;
+    int timeout = 20;
     for(int i = 1; i < argc; i++) {
         auto param = std::string(argv[i]);
         if(param == "--long-poll") {
             longPolling = true;
             continue;
         }
+        if(param == "--timeout") {
+            i++;
+            if(i == argc) throw std::runtime_error("Expected a timeout.\n");
+            timeout = (int)strtol(argv[i], nullptr, 10);
+            continue;
+        }
         if(reqStep == 2) {
             std::cerr << "Ignoring unknown argument " << param << "." << std::endl;
+            continue;
         }
         if(reqStep == 1) {
             if(param == "dump") {
@@ -91,6 +99,7 @@ void doCLI(int argc, char** argv) {
                 throw std::runtime_error("Expected dump or do.");
             }
             reqStep++;
+            continue;
         }
         if(reqStep == 0) {
             if(param == "list-events") {
@@ -107,6 +116,7 @@ void doCLI(int argc, char** argv) {
                 throw std::runtime_error("Expected list-events or detail-event <SKU>.");
             }
             reqStep++;
+            continue;
         }
     }
     if(reqStep != 2) {
@@ -136,7 +146,7 @@ void doCLI(int argc, char** argv) {
     if(longPolling) {
         while(true) {
             if(shouldICrash.load()) throw std::runtime_error("Early exit requested.\n");
-            bool isThereNewData = endpoint == "events" ? updateEventList(20) : db.applyEndpoint(endpoint, 20);
+            bool isThereNewData = endpoint == "events" ? updateEventList(timeout) : db.applyEndpoint(endpoint, timeout);
             if(shouldICrash.load()) throw std::runtime_error("Early exit requested.\n");
             if (isThereNewData) {
                 json newData = dumpAll ? dumpEntireDatabase(db) : dumpQueryResults(db, givenQuery.c_str());
