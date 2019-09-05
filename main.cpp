@@ -6,6 +6,7 @@
 #include <csignal>
 #include "VEXSQL.hpp"
 #include "json.hpp"
+#include <condition_variable>
 
 using namespace std::string_literals;
 using json = nlohmann::json;
@@ -13,8 +14,10 @@ using json = nlohmann::json;
 //Ctrl-C and SIGINT handler
 //Flag before and after updating the database when doing --long-poll.
 std::atomic<bool> shouldICrash(false);
+std::condition_variable threadNotifier;
 void shouldCrash(int) {
     shouldICrash.store(true);
+    threadNotifier.notify_all();
 }
 void setIntHandler() {
     struct sigaction sa {};
