@@ -113,6 +113,9 @@ void doCLI(int argc, char** argv) {
                 i++;
                 if(i == argc) throw std::runtime_error("Expected an SKU.\n");
                 param = std::string(argv[i]);
+                std::transform(param.begin(), param.end(), param.begin(), [](unsigned char c) {
+                    return std::tolower(c);
+                });
                 endpoint = "event/" + param;
             } else {
                 throw std::runtime_error("Expected list-events or detail-event <SKU>.");
