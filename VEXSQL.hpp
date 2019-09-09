@@ -33,6 +33,7 @@ struct ScopedSQLite3 {
     ScopedSQLite3& operator=(const ScopedSQLite3&) = delete;
     ScopedSQLite3(ScopedSQLite3&& other) noexcept {
         ptr = other.ptr;
+        seqTableName = other.seqTableName;
         other.ptr = nullptr;
     }
     ScopedSQLite3& operator=(ScopedSQLite3&& other) noexcept {
