@@ -49,12 +49,37 @@ json dumpEntireDatabase(ScopedSQLite3& db) {
     return ret;
 }
 
+void applyXform(json& arr, std::string key, std::string val) {
+    if(!key.empty()) {
+        json obj = json::object();
+        for(auto& row: arr) (obj[row[key].get<std::string>()] = row).erase(key);
+        arr = obj;
+    }
+    if(!val.empty()) {
+        if(arr.is_object()) {
+            auto& obj = arr;
+            for(auto& [_, v]: obj.items()) {
+                v = v[val];
+            }
+        } else {
+            for(auto& v: arr) {
+                v = v[val];
+            }
+        }
+    }
+}
+
 void doCLI(int argc, char** argv) {
     if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <list-events | list-events-no-network | detail-event <SKU>> <dump | do <SQL>> [--long-poll] [--timeout x]." << std::endl;
+        std::cout << "Usage: " << argv[0] << " <list-events | list-events-no-network | detail-event <SKU>> <dump | do <SQL>> [--key column][--val column][--long-poll] [--timeout x]." << std::endl;
         std::cout << "list-events will give data on all events registered on VEX Via." << std::endl;
         std::cout << "detail-event-<SKU> will give data for particular event/SKU. (The end of a RobotEvents URL.)" << std::endl;
         std::cout << "Output is written to stdout in JSON." << std::endl;
+        std::cout << "JSON will be indented if the --pretty option is specified." << std::endl;
+        std::cout << "When running a query, an array will be returned. If you think a column of the table is suitable" << std::endl;
+        std::cout << "  for assigning JSON keys and returning an object instead, use --key. --key sku is recommended" << std::endl;
+        std::cout << "  when working with the events table. --val makes each array/object entry be a single column's" << std::endl;
+        std::cout << "  data rather than the entire row, which can make things more readable in manual use.";
         std::cout << "The long-poll option will first work like normal, printing out the current state of VEX Via," << std::endl;
         std::cout << "    however the program will continue running and wait for VEX Via to change using a long-poll." << std::endl;
         std::cout << "    JSON Patches are used to print changes. Applications using long-polling should be flexible" << std::endl;
@@ -74,6 +99,8 @@ void doCLI(int argc, char** argv) {
     bool pretty = false;
     std::string givenQuery;
     int timeout = 20;
+    std::string val = "";
+    std::string key = "";
     for(int i = 1; i < argc; i++) {
         auto param = std::string(argv[i]);
         if(param == "--long-poll") {
@@ -82,8 +109,20 @@ void doCLI(int argc, char** argv) {
         }
         if(param == "--timeout") {
             i++;
-            if(i == argc) throw std::runtime_error("Expected a timeout.\n");
+            if(i == argc) throw std::runtime_error("Expected a timeout.");
             timeout = (int)strtol(argv[i], nullptr, 10);
+            continue;
+        }
+        if(param == "--val") {
+            i++;
+            if(i == argc) throw std::runtime_error("Expected a column for result values.");
+            val = argv[i];
+            continue;
+        }
+        if(param == "--key") {
+            i++;
+            if(i == argc) throw std::runtime_error("Expected a column for object keys.");
+            key = argv[i];
             continue;
         }
         if(param == "--pretty") {
@@ -151,6 +190,7 @@ void doCLI(int argc, char** argv) {
         orig = dumpEntireDatabase(db);
     } else {
         orig = dumpQueryResults(db, givenQuery.c_str());
+        applyXform(orig, key, val);
     }
     if(pretty) {
         std::cout << orig.dump(2) << std::endl;
@@ -164,6 +204,7 @@ void doCLI(int argc, char** argv) {
             if(shouldICrash.load()) throw std::runtime_error("Early exit requested.\n");
             if (isThereNewData) {
                 json newData = dumpAll ? dumpEntireDatabase(db) : dumpQueryResults(db, givenQuery.c_str());
+                if(!dumpAll) applyXform(newData, key, val);
                 std::cout << nlohmann::json::diff(orig, newData);
                 orig = newData;
             }
