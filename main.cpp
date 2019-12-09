@@ -71,6 +71,7 @@ void doCLI(int argc, char** argv) {
     bool network = true;
     std::string endpoint;
     bool dumpAll = false;
+    bool pretty = false;
     std::string givenQuery;
     int timeout = 20;
     for(int i = 1; i < argc; i++) {
@@ -83,6 +84,10 @@ void doCLI(int argc, char** argv) {
             i++;
             if(i == argc) throw std::runtime_error("Expected a timeout.\n");
             timeout = (int)strtol(argv[i], nullptr, 10);
+            continue;
+        }
+        if(param == "--pretty") {
+            pretty = true;
             continue;
         }
         if(reqStep == 2) {
@@ -147,7 +152,11 @@ void doCLI(int argc, char** argv) {
     } else {
         orig = dumpQueryResults(db, givenQuery.c_str());
     }
-    std::cout << orig.dump() << std::endl;
+    if(pretty) {
+        std::cout << orig.dump(2) << std::endl;
+    } else {
+        std::cout << orig << std::endl;
+    }
     if(longPolling) {
         while(true) {
             if(shouldICrash.load()) throw std::runtime_error("Early exit requested.\n");
