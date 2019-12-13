@@ -33,6 +33,7 @@ std::string download(const std::string& url) {
         std::cerr << url << std::endl;
         request.setOpt<curlpp::options::Url>(url);
         request.setOpt<curlpp::options::WriteStream>(&os);
+        request.setOpt<curlpp::options::Encoding>("identity, br, gzip, deflate");
         request.perform();
         auto code = curlpp::infos::ResponseCode::get(request);
         wasSuccessful = code == 200 || code == 204;
